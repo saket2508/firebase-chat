@@ -5,33 +5,45 @@ import { ScrollView } from 'react-native-gesture-handler';
 import { GiftedChat, Bubble } from 'react-native-gifted-chat';
 import { Feather, MaterialCommunityIcons } from "react-native-vector-icons";
 
-export default function ChatWindow({navigation}) {
+export default function ChatRoom({navigation}) {
 
-    const [ messages, setMessages ] = useState([]);
-    const [ message, setMessage ] = useState("");
+    const [ messages, setMessages ] = useState([
+        {
+            _id: 0,
+            text: 'Hey',
+            createdAt: new Date().getTime(),
+            system: true
+        },
+        {
+            _id: 1,
+            text: 'Hello!',
+            createdAt: new Date().getTime(),
+            user: {
+              _id: 2,
+              name: 'Demo'
+            }
+        }
+    ]);
 
-    function renderBubble(props){
-        return(
-            <Bubble
-            {...props}
-            wrapperStyle={{
-                right: {
-                    backgroundColor: '#2196f3'
-                }
-            }}
-            textStyle={{
-                right:{
-                    color:'#fff'
-                }
-            }}
-            />
-        )
+    function handleSend(newMessage = []){
+        setMessages(GiftedChat.append(messages, newMessage))
     }
+
+    
 
     return (
         <View style={styles.container}>
-            <ScrollView style={styles.chatContainer}>
-                
+
+            <GiftedChat
+               messages={messages}
+               onSend={newMessage => handleSend(newMessage)}
+               user={{
+                 _id: 1
+               }}
+                />
+
+
+            {/* <ScrollView style={styles.chatContainer}>
             </ScrollView>
             <View style={styles.typingScreen}>
               <View style={styles.typingScreenContainer}>
@@ -48,7 +60,7 @@ export default function ChatWindow({navigation}) {
                 : <Icon iconStyle={{alignContent:'stretch'}} rounded reverse name="add" size={18} color={'#2196f3'} onPress={() => setMessages([...messages, message])}/>
                 }
               </View>
-            </View>
+            </View> */}
         </View>
     )
 }

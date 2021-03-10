@@ -1,59 +1,104 @@
-import React, { useState } from "react";
-import { Pressable } from "react-native";
+import React, { useState, useEffect } from "react";
+import { ActivityIndicator, Pressable } from "react-native";
 import { View, Text, StyleSheet, FlatList } from "react-native";
 import { ListItem, Avatar, Icon } from "react-native-elements";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import HomeHeader from "../../elements/homeHeader";
 
+import { Firestore } from "../../../firebase/config";
 export default function Home({ navigation }){
 
-    const [ chatList, setChatList ] = useState([
-        {
-            name: "Leslie Knope",
-            avatar_url: "https://i.insider.com/5824aa9046e27a1c008b5eec?width=998&format=jpeg",
-            subtitle: "What I hear when I'm being yelled at is people caring loudly at me."
-        },
-        {
-            name: "Tom Haverford",
-            avatar_url: "https://i.pinimg.com/originals/a6/55/71/a65571d4a5d34d80ab32a5b07eb78ec5.jpg",
-            subtitle: "Oh, what’s this in my shoe? Red carpet insole. Everywhere I go, I’m walking on red carpet."
-        },
-    ])
+    const [ availableChatRooms, setAvailableChatRooms ] = useState([])
+    const [ loading, setLoading ] = useState(true);
 
+    const keyExtractor = (item, index) => index.toString();
 
+    useEffect(() => {
+        const unsubscribe = Firestore
+            .collection('MESSAGE_THREADS')
+            .orderBy('latestMessage.createdAt', 'desc')
+            .onSnapshot(querySnapshot => {
+                const threads = querySnapshot.docs.map(documentSnapshot => {
+                    return {
+                        _id: documentSnapshot.id,
+                        name: '',
+                        latestMessage: { text: '' },
+                        ...documentSnapshot.data()
+                    }
+                })
 
-    const keyExtractor = (item, index) => index.toString()
+                setAvailableChatRooms(threads)
+                console.log(threads)
+                if(loading){
+                    setLoading(false)
+                }
+            })
+
+            return () => unsubscribe()
+    }, [])
 
     const renderItem = ({ item }) => (
-        <TouchableOpacity onPress = {() => navigation.navigate('ChatWindow', {
-            name: item.name,
-            url: item.avatar_url
+        <TouchableOpacity key={item.id} onPress = {() => navigation.navigate('ChatRoom', {
+                name: item.name,
+                avatar: item.avatar
             })}>
             <ListItem>
-            <Avatar rounded size="medium" source={{uri: item.avatar_url}}/>
+
+           {item.avatar!==null
+           ? <Avatar 
+                rounded 
+                size="medium" 
+                source={{uri: item.avatar}}/> 
+            : <Avatar 
+                rounded 
+                size="medium"  
+                title={item.name[0].toUpperCase()} 
+                containerStyle={{backgroundColor:'#2196f3'}}/>
+            }
+
             <ListItem.Content>
                 <ListItem.Title style={{fontWeight:'bold'}}>{item.name}</ListItem.Title>
-                <ListItem.Subtitle>{item.subtitle}</ListItem.Subtitle>
+                <ListItem.Subtitle>{item.latestMessage.text}</ListItem.Subtitle>
             </ListItem.Content>
             <ListItem.Chevron />
             </ListItem>
         </TouchableOpacity>
       )
 
+      if(loading){
+          return(
+              <View style={styles.container}>
+                <View style={styles.headerHome}>
+                    <HomeHeader props = {{navigation: navigation}}/>
+                </View>
+                <View style={{justifyContent:'center', alignItems:'center'}}>
+                    <ActivityIndicator size="large" color={"#2196f3"}/>
+                </View>
+                <View style={styles.floatingActionButton}>
+                    <Icon onPress={() => navigation.navigate('Search')} reverse raised rounded name="create" size={24} color={'#2196f3'}/>
+                </View>
+              </View>
+          )
+      }
+
     return(
         <View style={styles.container}>
             <View style={styles.headerHome}>
-                <HomeHeader props = {{navigation: navigation}}/>
+                <HomeHeader props = {{navigation: navigation, chatRooms: availableChatRooms}}/>
             </View>
+
             <View style={styles.chatContainer}>
                     <FlatList
                         keyExtractor={keyExtractor}
-                        data={chatList}
+                        data={availableChatRooms}
                         renderItem={renderItem}
                     />
             </View>
+            
             <View style={styles.floatingActionButton}>
-                <Icon onPress={() => navigation.navigate('Search')} reverse raised rounded name="create" size={24} color={'#2196f3'}/>
+                <Icon onPress={() => navigation.navigate('Search', {
+                    chatRooms: availableChatRooms
+                })} reverse raised rounded name="create" size={24} color={'#2196f3'}/>
             </View>
         </View>
     )

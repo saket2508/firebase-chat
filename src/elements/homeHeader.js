@@ -15,10 +15,14 @@ export default function HomeHeader({props}){
                   />
                   <Text style={{fontSize:20, marginLeft:20, fontWeight:'bold'}}>FireChat</Text>
             </View>
+
             <View style={{flexDirection:'row', alignItems:'center', justifyContent:'flex-end'}}>
-                <Icon rounded name="search" onPress={() => props.navigation.navigate('Search')}/>
+                {props.chatRooms ? <Icon rounded name="search" onPress={() => props.navigation.navigate('Search', {
+                    chatRooms: props.chatRooms
+                })}/> :  <Icon rounded name="search" onPress={() => props.navigation.navigate('Search')}/>}
                 <Icon name="more-vert" iconStyle={{marginLeft:20}} onPress={() => {console.log('Menu')}}/>
             </View>
+            
         </View> 
     )
 }
